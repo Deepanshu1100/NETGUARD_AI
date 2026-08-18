@@ -2,14 +2,18 @@ import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 
-# API Key load karo
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key = api_key)
 
-print("🔍 Checking available Gemini models for your API Key...")
+print("checking available models...")
+
 try:
     for m in genai.list_models():
+        
         if 'generateContent' in m.supported_generation_methods:
-            print(f"✅ Found Model: {m.name}")
+            print(f"model -> {m.name}")
+            
 except Exception as e:
-    print(f"❌ Error: {e}")
+    print("api error:", e)
+    
