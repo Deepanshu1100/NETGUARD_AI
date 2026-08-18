@@ -13,6 +13,15 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 model = None
 
 # load latest model 
@@ -68,24 +77,25 @@ def copilot_action(request: CopilotRequest):
     A network fault has been detected.
     - Fault Severity: {request.fault_severity} (0=Normal, 1=Warning, 2=Critical)
     - Location: Node {request.location}
-    - User Role: {request.role}
+    - CURRENT USER ROLE: {request.role}
 
-    If the User Role is 'L1 Engineer', provide highly technical, step-by-step hardware/software troubleshooting steps (e.g., reroute traffic, reboot optical switch).
-    If the User Role is 'NOC Manager', provide the business impact, SLA violation risks, and estimated downtime cost.
+    STRICT INSTRUCTIONS BASED ON ROLE:
+    If CURRENT USER ROLE is 'L1 Engineer': Focus ONLY on technical hardware/software troubleshooting (e.g., Reboot optical switch, check fiber links, run port diagnostics). 
+    If CURRENT USER ROLE is 'NOC Manager': Focus ONLY on Business Impact, Financial Loss, SLA violation risks, and high-level management approvals. DO NOT mention hardware technicalities.
 
     IMPORTANT: You MUST respond in pure JSON format exactly like this:
     {{
-        "analysis": "Brief 2-line explanation",
+        "analysis": "Brief 2-line explanation tailored strictly to the user role",
         "actions": [
-            {{"label": "Action 1 Name", "command": "backend_system_command_1"}},
-            {{"label": "Action 2 Name", "command": "backend_system_command_2"}}
+            {{"label": "Action 1 Name", "command": "cmd_1"}},
+            {{"label": "Action 2 Name", "command": "cmd_2"}}
         ]
     }}
     """
     
     try:
         # call ai api
-        ai_model = genai.GenerativeModel('gemini-1.5-flash') 
+        ai_model = genai.GenerativeModel('gemini-3.6-flash') 
         resp = ai_model.generate_content(prompt)
         
         # clean output if it gives markdown tags
@@ -93,5 +103,5 @@ def copilot_action(request: CopilotRequest):
         return json.loads(clean_json)
     
     except Exception as e:
-        # print("err:", e)
+        print("err:", e)
         return {"error": "generation_failed", "trace": str(e)}
